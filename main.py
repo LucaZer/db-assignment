@@ -18,14 +18,15 @@ db = client.event_management_db
 
 # Data Models
 class Event(BaseModel):
-    name: str
+    title: str
     description: str
     date: str
     venue_id: str
     max_attendees: int
 
 class Attendee(BaseModel):
-    name: str
+    firstName: str
+    lastName: str
     email: str
     phone: Optional[str] = None
 
