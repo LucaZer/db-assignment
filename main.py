@@ -501,14 +501,9 @@ async def get_event_media(event_id: str):
 
 @app.get("/media/venue/{venue_id}")
 async def get_venue_media(venue_id: str):
-    
     #Retrieve all media associated with a specific venue.
-
-    #Args:
-       # venue_id (str): Venue ID.
-
-    #Returns:
-        #list: List of media documents for the venue.
+    #Args: venue_id (str): Venue ID.
+    #Returns:list: List of media documents for the venue.
    
     media_items = await db.media.find({"venue_id": venue_id}).to_list(100)
     return list_obj_to_str(media_items)
