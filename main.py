@@ -40,6 +40,13 @@ class Booking(BaseModel):
     attendee_id: str
     ticket_type: str
     quantity: int
+    
+class Media(BaseModel):
+    fileName: str
+    fileType: str
+    mediaType: str  
+    url: Optional[str] = None 
+
 
 # Event Endpoints
 @app.post("/events")
