@@ -90,11 +90,9 @@ async def create_event(event: Event):
     """
     Create a new event and store it in the 'events' collection.
 
-    Args:
-        event (Event): The event data from the client.
+    Args: event (Event): The event data from the client.
 
-    Returns:
-        dict: Contains a success message and the inserted event ID.
+    Returns: Contains a success message and the inserted event ID.
     """
     result = await db.events.insert_one(event.dict())
     return {"message": "Event created", "id": str(result.inserted_id)}
@@ -104,8 +102,7 @@ async def get_events():
     """
     Retrieve all events from the database.
 
-    Returns:
-        list: List of event documents with '_id' as string.
+    Returns: List of event documents with '_id' as string.
     """
     events = await db.events.find().to_list(100)
     return list_obj_to_str(events)
@@ -115,14 +112,11 @@ async def get_event(event_id: str):
     """
     Retrieve a single event by its ID.
 
-    Args:
-        event_id (str): MongoDB ObjectId of the event.
+    Args: event_id (str): MongoDB ObjectId of the event.
 
-    Returns:
-        dict: Event document.
+    Returns: Event document.
 
-    Raises:
-        HTTPException: If the event is not found.
+    Raises: HTTPException: If the event is not found.
     """
     event = await db.events.find_one({"_id": ObjectId(event_id)})
     if not event:
@@ -138,11 +132,9 @@ async def update_event(event_id: str, event: Event):
         event_id (str): Event ID.
         event (Event): Updated event data.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
 
-    Raises:
-        HTTPException: If the event does not exist.
+    Raises: HTTPException: If the event does not exist.
     """
     result = await db.events.update_one({"_id": ObjectId(event_id)}, {"$set": event.dict()})
     if result.matched_count == 0:
@@ -154,33 +146,27 @@ async def delete_event(event_id: str):
     """
     Delete an event from the database.
 
-    Args:
-        event_id (str): Event ID.
+    Args: event_id (str): Event ID.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
 
-    Raises:
-        HTTPException: If the event does not exist.
+    Raises: HTTPException: If the event does not exist.   
     """
     result = await db.events.delete_one({"_id": ObjectId(event_id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "Event deleted"}
 
-# ------------------------
+
 # Attendee Endpoints
-# ------------------------
 @app.post("/attendees")
 async def create_attendee(attendee: Attendee):
     """
     Create a new attendee.
 
-    Args:
-        attendee (Attendee): Attendee data.
+    Args: attendee (Attendee): Attendee data.
 
-    Returns:
-        dict: Success message and attendee ID.
+    Returns: Success message and attendee ID.
     """
     result = await db.attendees.insert_one(attendee.dict())
     return {"message": "Attendee created", "id": str(result.inserted_id)}
@@ -190,8 +176,7 @@ async def get_attendees():
     """
     Retrieve all attendees.
 
-    Returns:
-        list: List of attendee documents.
+    Returns: List of attendee documents.
     """
     attendees = await db.attendees.find().to_list(100)
     return list_obj_to_str(attendees)
@@ -201,14 +186,11 @@ async def get_attendee(attendee_id: str):
     """
     Retrieve an attendee by ID.
 
-    Args:
-        attendee_id (str): Attendee ID.
+    Args: attendee_id (str): Attendee ID.
 
-    Returns:
-        dict: Attendee document.
+    Returns: Attendee document.
 
-    Raises:
-        HTTPException: If attendee not found.
+    Raises: HTTPException: If attendee not found.
     """
     attendee = await db.attendees.find_one({"_id": ObjectId(attendee_id)})
     if not attendee:
@@ -224,8 +206,7 @@ async def update_attendee(attendee_id: str, attendee: Attendee):
         attendee_id (str): Attendee ID.
         attendee (Attendee): Updated data.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
     """
     result = await db.attendees.update_one({"_id": ObjectId(attendee_id)}, {"$set": attendee.dict()})
     if result.matched_count == 0:
@@ -237,11 +218,9 @@ async def delete_attendee(attendee_id: str):
     """
     Delete an attendee from the database.
 
-    Args:
-        attendee_id (str): Attendee ID.
+    Args: attendee_id (str): Attendee ID.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
     """
     result = await db.attendees.delete_one({"_id": ObjectId(attendee_id)})
     if result.deleted_count == 0:
@@ -254,11 +233,9 @@ async def create_venue(venue: Venue):
     """
     Create a new venue.
 
-    Args:
-        venue (Venue): Venue data.
+    Args: venue (Venue): Venue data.
 
-    Returns:
-        dict: Success message and venue ID.
+    Returns: Success message and venue ID.
     """
     result = await db.venues.insert_one(venue.dict())
     return {"message": "Venue created", "id": str(result.inserted_id)}
@@ -268,8 +245,7 @@ async def get_venues():
     """
     Retrieve all venues.
 
-    Returns:
-        list: List of venue documents.
+    Returns: List of venue documents.
     """
     venues = await db.venues.find().to_list(100)
     return list_obj_to_str(venues)
@@ -282,8 +258,7 @@ async def get_venue(venue_id: str):
     Args:
         venue_id (str): Venue ID.
 
-    Returns:
-        dict: Venue document.
+    Returns: Venue document.
     """
     venue = await db.venues.find_one({"_id": ObjectId(venue_id)})
     if not venue:
@@ -299,8 +274,7 @@ async def update_venue(venue_id: str, venue: Venue):
         venue_id (str): Venue ID.
         venue (Venue): Updated data.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
     """
     result = await db.venues.update_one({"_id": ObjectId(venue_id)}, {"$set": venue.dict()})
     if result.matched_count == 0:
@@ -312,11 +286,9 @@ async def delete_venue(venue_id: str):
     """
     Delete a venue from the database.
 
-    Args:
-        venue_id (str): Venue ID.
+    Args: venue_id (str): Venue ID.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
     """
     result = await db.venues.delete_one({"_id": ObjectId(venue_id)})
     if result.deleted_count == 0:
@@ -332,8 +304,7 @@ async def create_booking(booking: Booking):
     Args:
         booking (Booking): Booking data including event and attendee IDs.
 
-    Returns:
-        dict: Success message and booking ID.
+    Returns: Success message and booking ID.
     """
     result = await db.bookings.insert_one(booking.dict())
     return {"message": "Booking created", "id": str(result.inserted_id)}
@@ -343,8 +314,7 @@ async def get_bookings():
     """
     Retrieve all bookings.
 
-    Returns:
-        list: List of booking documents.
+    Returns: List of booking documents.
     """
     bookings = await db.bookings.find().to_list(100)
     return list_obj_to_str(bookings)
@@ -354,11 +324,9 @@ async def get_booking(booking_id: str):
     """
     Retrieve a booking by ID.
 
-    Args:
-        booking_id (str): Booking ID.
+    Args: booking_id (str): Booking ID.
 
-    Returns:
-        dict: Booking document.
+    Returns: Booking document.
     """
     booking = await db.bookings.find_one({"_id": ObjectId(booking_id)})
     if not booking:
@@ -374,8 +342,7 @@ async def update_booking(booking_id: str, booking: Booking):
         booking_id (str): Booking ID.
         booking (Booking): Updated booking data.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
     """
     result = await db.bookings.update_one({"_id": ObjectId(booking_id)}, {"$set": booking.dict()})
     if result.matched_count == 0:
@@ -387,11 +354,9 @@ async def delete_booking(booking_id: str):
     """
     Delete a booking.
 
-    Args:
-        booking_id (str): Booking ID.
+    Args: booking_id (str): Booking ID.
 
-    Returns:
-        dict: Success message.
+    Returns: Success message.
     """
     result = await db.bookings.delete_one({"_id": ObjectId(booking_id)})
     if result.deleted_count == 0:
@@ -416,8 +381,7 @@ async def upload_event_poster(event_id: str, file: UploadFile = File(...)):
         event_id (str): ID of the event.
         file (UploadFile): Uploaded file.
 
-    Returns:
-        dict: Success message and media document ID.
+    Returns: Success message and media document ID.
     """
     content = await file.read()
     media_doc = {
@@ -474,11 +438,9 @@ async def get_media(media_id: str):
     Retrieve a media file metadata by its ID.
     Returns file metadata including binary content.
 
-    Args:
-        media_id (str): Media document ID.
+    Args: media_id (str): Media document ID.
 
-    Returns:
-        dict: Media document including raw file content.
+    Returns: Media file including raw file content.
     """
     media = await db.media.find_one({"_id": ObjectId(media_id)})
     if not media:
@@ -490,23 +452,21 @@ async def get_event_media(event_id: str):
     """
     Retrieve all media associated with a specific event.
 
-    Args:
-        event_id (str): Event ID.
+    Args: event_id (str): Event ID.
 
-    Returns:
-        list: List of media documents for the event.
+    Returns: List of media documents for the event.
     """
     media_items = await db.media.find({"event_id": event_id}).to_list(100)
     return list_obj_to_str(media_items)
 
 @app.get("/media/venue/{venue_id}")
 async def get_venue_media(venue_id: str):
-    
-    #Retrieve all media associated with a specific venue.
+    """
+    Retrieve all media associated with a specific venue.
 
-    #Args: venue_id (str): Venue ID.
+    Args: venue_id (str): Venue ID.
 
-    #Returns: List of media documents for the venue.
-   
+    Returns: List of media documents for the venue.
+    """
     media_items = await db.media.find({"venue_id": venue_id}).to_list(100)
     return list_obj_to_str(media_items)
