@@ -12,7 +12,7 @@ A FastAPI-based event management system using MongoDB Atlas.
 2. Install dependencies:
    pip install -r requirements.txt
 3. Create a .env file with:
-   MONGO_URI=your_mongodb_connection_string
+   MONGO_URI=mongodb+srv://dbUser:MROcnOx3noO2zfSx@cluster0.sf7ttvx.mongodb.net/Db_Project
 4. Run the application:
    uvicorn main:app --reload
 
