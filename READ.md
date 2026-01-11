@@ -1,14 +1,9 @@
-# Event Management API
-
-## Description
-A FastAPI-based event management system using MongoDB Atlas.
-
 ## Requirements
 - Python 3.11+
-- MongoDB Atlas account
 
 ## Setup Instructions
 1. Create a virtual environment
+   .venv\Scripts\Activate.ps1
 2. Install dependencies:
    pip install -r requirements.txt
 3. Create a .env file with:
