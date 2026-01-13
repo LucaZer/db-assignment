@@ -2,7 +2,7 @@
 - Python 3.11+
 
 ## Setup Instructions
-1. Create a virtual environment
+1. Create and Activate a virtual environment
    .venv\Scripts\Activate.ps1
 2. Install dependencies:
    pip install -r requirements.txt
