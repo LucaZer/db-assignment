@@ -1,7 +1,7 @@
 import os
 import io
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -29,7 +29,7 @@ async def root():
 
 @app.get("/favicon.ico")
 async def favicon():
-    return JSONResponse(content={}, status_code=204)
+    return Response(status_code=204)
 
 # SECURITY HELPERS
 def sanitize_string(value: str):
@@ -458,8 +458,21 @@ async def delete_booking(booking_id: str):
     return {"message": "Booking deleted"}
 
 # Media Endpoints
+# Helper Functions for Media Operations
 
 async def upload_media(collection, link_field: str, link_id: str, media_type: str, file: UploadFile):
+    """
+    Helper function to upload media files to the database.
+
+    Args:
+        collection: MongoDB collection to store media.
+        link_field (str): Field name to link media (event_id or venue_id).
+        link_id (str): ID of the event or venue.
+        media_type (str): Type of media (event_poster, promo_video, venue_photo).
+        file (UploadFile): Uploaded file.
+
+    Returns: Success message and media document ID.
+    """
     content = await file.read()
     doc = {
         link_field: link_id,
@@ -473,6 +486,19 @@ async def upload_media(collection, link_field: str, link_id: str, media_type: st
     return {"message": "Uploaded", "id": str(result.inserted_id)}
 
 async def stream_latest_media(collection, link_field: str, link_id: str, media_type: str):
+    """
+    Helper function to retrieve and stream the latest media file.
+
+    Args:
+        collection: MongoDB collection to query.
+        link_field (str): Field name to search (event_id or venue_id).
+        link_id (str): ID of the event or venue.
+        media_type (str): Type of media to retrieve.
+
+    Returns: StreamingResponse with binary file content.
+
+    Raises: HTTPException: If no media found.
+    """
     doc = await collection.find_one(
         {link_field: link_id, "media_type": media_type},
         sort=[("uploaded_at", -1)]
@@ -487,37 +513,96 @@ async def stream_latest_media(collection, link_field: str, link_id: str, media_t
     )
 
 
+# Media Upload Endpoints
+
 @app.post("/upload_event_poster/{event_id}")
 async def upload_event_poster(event_id: str, file: UploadFile = File(...)):
+    """
+    Upload an event poster image.
+
+    Args:
+        event_id (str): ID of the event.
+        file (UploadFile): Image file to upload.
+
+    Returns: Success message and media document ID.
+
+    Raises: HTTPException: If file is not an image.
+    """
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Poster must be an image")
     return await upload_media(db.media, "event_id", event_id, "event_poster", file)
  
-#upload and retrieve endpoints for promo videos
 @app.post("/upload_promo_video/{event_id}")
 async def upload_promo_video(event_id: str, file: UploadFile = File(...)):
+    """
+    Upload a promotional video for an event.
+
+    Args:
+        event_id (str): ID of the event.
+        file (UploadFile): Video file to upload.
+
+    Returns: Success message and media document ID.
+
+    Raises: HTTPException: If file is not a video.
+    """
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Promo must be a video")
     return await upload_media(db.media, "event_id", event_id, "promo_video", file)
  
-#upload and retrieve endpoints for venue photos
 @app.post("/upload_venue_photo/{venue_id}")
 async def upload_venue_photo(venue_id: str, file: UploadFile = File(...)):
+    """
+    Upload a photo for a venue.
+
+    Args:
+        venue_id (str): ID of the venue.
+        file (UploadFile): Image file to upload.
+
+    Returns: Success message and media document ID.
+
+    Raises: HTTPException: If file is not an image.
+    """
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Venue photo must be an image")
     return await upload_media(db.media, "venue_id", venue_id, "venue_photo", file)
  
-#retrieves latest poster from media collection
+# Media Retrieval Endpoints
+
 @app.get("/event_poster/{event_id}")
 async def get_event_poster(event_id: str):
+    """
+    Retrieve the latest event poster for an event.
+
+    Args: event_id (str): Event ID.
+
+    Returns: Streaming response with poster image.
+
+    Raises: HTTPException: If no poster found for event.
+    """
     return await stream_latest_media(db.media, "event_id", event_id, "event_poster")
  
-#retrieves latest promo video from media collection
 @app.get("/promo_video/{event_id}")
 async def get_promo_video(event_id: str):
+    """
+    Retrieve the latest promotional video for an event.
+
+    Args: event_id (str): Event ID.
+
+    Returns: Streaming response with video file.
+
+    Raises: HTTPException: If no promo video found for event.
+    """
     return await stream_latest_media(db.media, "event_id", event_id, "promo_video")
  
-#retrieves latest venue photo from media collection
 @app.get("/venue_photo/{venue_id}")
 async def get_venue_photo(venue_id: str):
+    """
+    Retrieve the latest photo for a venue.
+
+    Args: venue_id (str): Venue ID.
+
+    Returns: Streaming response with venue photo image.
+
+    Raises: HTTPException: If no photo found for venue.
+    """
     return await stream_latest_media(db.media, "venue_id", venue_id, "venue_photo")
