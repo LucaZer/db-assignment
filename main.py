@@ -29,7 +29,7 @@ async def root():
 
 @app.get("/favicon.ico")
 async def favicon():
-    return JSONResponse(status_code=204)
+    return JSONResponse(content={}, status_code=204)
 
 # SECURITY HELPERS
 def sanitize_string(value: str):
