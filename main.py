@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -18,6 +19,16 @@ app = FastAPI(title="Event Management API")
 # MongoDB connection
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 db = client.event_management_db
+
+# Check Endpoint
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "API is up"}
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return JSONResponse(status_code=204)
 
 # SECURITY HELPERS
 def sanitize_string(value: str):
