@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import motor.motor_asyncio
 from bson import ObjectId
 from bson.errors import InvalidId
+from bson.binary import Binary
 
 # Load the MongoDB connection string from a .env file
 load_dotenv()
@@ -507,7 +508,7 @@ async def stream_latest_media(collection, link_field: str, link_id: str, media_t
         raise HTTPException(status_code=404, detail="No media found")
  
     return StreamingResponse(
-        io.BytesIO(doc["content"]),
+        io.BytesIO(Binary(doc["content"])),
         media_type=doc["content_type"],
         headers={"Content-Disposition": f'inline; filename="{doc["filename"]}"'}
     )
