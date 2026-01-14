@@ -1,6 +1,7 @@
 import os
+import io
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -91,14 +92,15 @@ class Booking(BaseModel):
     ticket_type: str
     quantity: int
 
-class Media(BaseModel):
-    """
-    Model representing uploaded media (images/videos).
-    """
-    fileName: str
-    fileType: str
-    mediaType: str 
-    url: Optional[str] = None
+#class Media(BaseModel):
+#    """
+#    Model representing uploaded media (images/videos).
+#    """
+#    event_id: str
+#    filename: str
+#    content_type: Optional[str] = None
+#    content: bytes
+#    uploaded_at: datetime
 
 # Helper Functions
 def obj_to_str(document):
@@ -455,110 +457,67 @@ async def delete_booking(booking_id: str):
         raise HTTPException(status_code=404, detail="Booking not found")
     return {"message": "Booking deleted"}
 
-# Media Upload Endpoints
-@app.post("/upload/event_poster/{event_id}")
+# Media Endpoints
+
+async def upload_media(collection, link_field: str, link_id: str, media_type: str, file: UploadFile):
+    content = await file.read()
+    doc = {
+        link_field: link_id,
+        "media_type": media_type,
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "content": content,
+        "uploaded_at": datetime.utcnow()
+    }
+    result = await collection.insert_one(doc)
+    return {"message": "Uploaded", "id": str(result.inserted_id)}
+
+async def stream_latest_media(collection, link_field: str, link_id: str, media_type: str):
+    doc = await collection.find_one(
+        {link_field: link_id, "media_type": media_type},
+        sort=[("uploaded_at", -1)]
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="No media found")
+ 
+    return StreamingResponse(
+        io.BytesIO(doc["content"]),
+        media_type=doc["content_type"],
+        headers={"Content-Disposition": f'inline; filename="{doc["filename"]}"'}
+    )
+
+
+@app.post("/upload_event_poster/{event_id}")
 async def upload_event_poster(event_id: str, file: UploadFile = File(...)):
-    """
-    Upload an event poster.
-
-    Files are stored in the 'media' collection as binary data with metadata:
-    - fileName: Name of the uploaded file
-    - fileType: MIME type of the file
-    - mediaType: "poster"
-    - event_id: associated event
-    - content: raw bytes
-    - uploaded_at: timestamp
-
-    Args:
-        event_id (str): ID of the event.
-        file (UploadFile): Uploaded file.
-
-    Returns: Success message and media document ID.
-    """
-    content = await file.read()
-    media_doc = {
-        "fileName": file.filename,
-        "fileType": file.content_type,
-        "mediaType": "poster",
-        "event_id": event_id,
-        "content": content,
-        "uploaded_at": datetime.utcnow()
-    }
-    result = await db.media.insert_one(media_doc)
-    return {"message": "Poster uploaded", "id": str(result.inserted_id)}
-
-@app.post("/upload/promo_video/{event_id}")
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Poster must be an image")
+    return await upload_media(db.media, "event_id", event_id, "event_poster", file)
+ 
+#upload and retrieve endpoints for promo videos
+@app.post("/upload_promo_video/{event_id}")
 async def upload_promo_video(event_id: str, file: UploadFile = File(...)):
-    """
-    Upload a promotional video for an event.
-    Stored in the 'media' collection similar to posters.
-    """
-    content = await file.read()
-    media_doc = {
-        "fileName": file.filename,
-        "fileType": file.content_type,
-        "mediaType": "video",
-        "event_id": event_id,
-        "content": content,
-        "uploaded_at": datetime.utcnow()
-    }
-    result = await db.media.insert_one(media_doc)
-    return {"message": "Promo video uploaded", "id": str(result.inserted_id)}
-
-@app.post("/upload/venue_photo/{venue_id}")
+    if not file.content_type or not file.content_type.startswith("video/"):
+        raise HTTPException(status_code=400, detail="Promo must be a video")
+    return await upload_media(db.media, "event_id", event_id, "promo_video", file)
+ 
+#upload and retrieve endpoints for venue photos
+@app.post("/upload_venue_photo/{venue_id}")
 async def upload_venue_photo(venue_id: str, file: UploadFile = File(...)):
-    """
-    Upload a photo for a venue.
-    Stored in the 'media' collection with mediaType = "venue_photo".
-    """
-    content = await file.read()
-    media_doc = {
-        "fileName": file.filename,
-        "fileType": file.content_type,
-        "mediaType": "venue_photo",
-        "venue_id": venue_id,
-        "content": content,
-        "uploaded_at": datetime.utcnow()
-    }
-    result = await db.media.insert_one(media_doc)
-    return {"message": "Venue photo uploaded", "id": str(result.inserted_id)}
-
-# Media Retrieval Endpoints
-@app.get("/media/{media_id}")
-async def get_media(media_id: str):
-    """
-    Retrieve a media file metadata by its ID.
-    Returns file metadata including binary content.
-
-    Args: media_id (str): Media document ID.
-
-    Returns: Media file including raw file content.
-    """
-    media = await db.media.find_one({"_id": ObjectId(media_id)})
-    if not media:
-        raise HTTPException(status_code=404, detail="Media not found")
-    return obj_to_str(media)
-
-@app.get("/media/event/{event_id}")
-async def get_event_media(event_id: str):
-    """
-    Retrieve all media associated with a specific event.
-
-    Args: event_id (str): Event ID.
-
-    Returns: List of media documents for the event.
-    """
-    media_items = await db.media.find({"event_id": event_id}).to_list(100)
-    return list_obj_to_str(media_items)
-
-@app.get("/media/venue/{venue_id}")
-async def get_venue_media(venue_id: str):
-    """
-    Retrieve all media associated with a specific venue.
-
-    Args: venue_id (str): Venue ID.
-
-    Returns: List of media documents for the venue.
-    """
-    media_items = await db.media.find({"venue_id": venue_id}).to_list(100)
-    return list_obj_to_str(media_items)
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Venue photo must be an image")
+    return await upload_media(db.media, "venue_id", venue_id, "venue_photo", file)
+ 
+#retrieves latest poster from media collection
+@app.get("/event_poster/{event_id}")
+async def get_event_poster(event_id: str):
+    return await stream_latest_media(db.media, "event_id", event_id, "event_poster")
+ 
+#retrieves latest promo video from media collection
+@app.get("/promo_video/{event_id}")
+async def get_promo_video(event_id: str):
+    return await stream_latest_media(db.media, "event_id", event_id, "promo_video")
+ 
+#retrieves latest venue photo from media collection
+@app.get("/venue_photo/{venue_id}")
+async def get_venue_photo(venue_id: str):
+    return await stream_latest_media(db.media, "venue_id", venue_id, "venue_photo")
